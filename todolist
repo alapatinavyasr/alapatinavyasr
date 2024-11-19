@@ -1,0 +1,111 @@
+import tkinter as tk
+from tkinter import messagebox
+import json
+from tkinter import ttk
+
+
+class ToDoApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("To-Do List Application")
+        self.root.geometry("400x500")
+        self.root.resizable(False, False)
+
+        # Task list
+        self.tasks = []
+        self.file_name = "tasks.json"
+
+        # Title Label
+        title = tk.Label(self.root, text="To-Do List", font=("Arial", 16, "bold"))
+        title.pack(pady=10)
+
+        # Task Entry
+        self.task_entry = tk.Entry(self.root, width=30, font=("Arial", 14))
+        self.task_entry.pack(pady=5)
+
+        # Buttons
+        button_frame = tk.Frame(self.root)
+        button_frame.pack(pady=10)
+
+        add_button = tk.Button(button_frame, text="Add Task", command=self.add_task, width=10)
+        add_button.grid(row=0, column=0, padx=5)
+
+        delete_button = tk.Button(button_frame, text="Delete Task", command=self.delete_task, width=10)
+        delete_button.grid(row=0, column=1, padx=5)
+
+        complete_button = tk.Button(button_frame, text="Mark Complete", command=self.mark_complete, width=15)
+        complete_button.grid(row=0, column=2, padx=5)
+
+        clear_completed_button = tk.Button(button_frame, text="Clear Completed", command=self.clear_completed, width=15)
+        clear_completed_button.grid(row=1, column=0, columnspan=3, pady=5)
+
+        # Task List Display
+        self.task_listbox = tk.Listbox(self.root, width=45, height=15, font=("Arial", 12), selectmode=tk.SINGLE)
+        self.task_listbox.pack(pady=10)
+
+        # Save and Load Buttons
+        file_button_frame = tk.Frame(self.root)
+        file_button_frame.pack(pady=10)
+
+        save_button = tk.Button(file_button_frame, text="Save Tasks", command=self.save_tasks, width=15)
+        save_button.grid(row=0, column=0, padx=5)
+
+        load_button = tk.Button(file_button_frame, text="Load Tasks", command=self.load_tasks, width=15)
+        load_button.grid(row=0, column=1, padx=5)
+
+        # Load tasks on startup
+        self.load_tasks()
+
+    def add_task(self):
+        task = self.task_entry.get().strip()
+        if task:
+            self.tasks.append({"task": task, "completed": False})
+            self.update_task_listbox()
+            self.task_entry.delete(0, tk.END)
+        else:
+            messagebox.showwarning("Input Error", "Task cannot be empty!")
+
+    def delete_task(self):
+        try:
+            selected_index = self.task_listbox.curselection()[0]
+            del self.tasks[selected_index]
+            self.update_task_listbox()
+        except IndexError:
+            messagebox.showwarning("Selection Error", "No task selected!")
+
+    def mark_complete(self):
+        try:
+            selected_index = self.task_listbox.curselection()[0]
+            self.tasks[selected_index]["completed"] = True
+            self.update_task_listbox()
+        except IndexError:
+            messagebox.showwarning("Selection Error", "No task selected!")
+
+    def clear_completed(self):
+        self.tasks = [task for task in self.tasks if not task["completed"]]
+        self.update_task_listbox()
+
+    def update_task_listbox(self):
+        self.task_listbox.delete(0, tk.END)
+        for task in self.tasks:
+            display_text = f"[{'✔' if task['completed'] else ' '}] {task['task']}"
+            self.task_listbox.insert(tk.END, display_text)
+
+    def save_tasks(self):
+        with open(self.file_name, "w") as file:
+            json.dump(self.tasks, file)
+        messagebox.showinfo("Save Successful", "Tasks saved successfully!")
+
+    def load_tasks(self):
+        try:
+            with open(self.file_name, "r") as file:
+                self.tasks = json.load(file)
+            self.update_task_listbox()
+        except (FileNotFoundError, json.JSONDecodeError):
+            self.tasks = []
+
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = ToDoApp(root)
+    root.mainloop()
